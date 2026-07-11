@@ -35,6 +35,51 @@
             </button>
           </div>
 
+          <!-- Combination Settings -->
+          <div class="border border-outline-variant rounded-xl overflow-hidden mb-lg">
+            <div class="bg-surface-container-low px-md py-sm flex items-center gap-sm border-b border-outline-variant">
+              <span class="material-symbols-outlined text-primary text-base">settings</span>
+              <span class="font-label-sm text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider text-xs">Combination Settings</span>
+            </div>
+            <div class="p-md flex flex-col gap-md">
+              <!-- Combination Length Toggle (multi-select) -->
+              <div>
+                <p class="text-xs text-outline font-semibold uppercase tracking-wider mb-sm">Combination Length <span class="text-primary normal-case">(multi-select)</span></p>
+                <div class="flex gap-sm">
+                  <button
+                    v-for="len in availableLengths"
+                    :key="len"
+                    @click="toggleLength(len)"
+                    :class="selectedLengths.has(len)
+                      ? 'bg-primary text-on-primary shadow-sm ring-2 ring-primary/30'
+                      : 'bg-surface-container border border-outline-variant text-on-surface-variant hover:bg-surface-container-high'"
+                    class="flex-1 py-sm px-sm rounded-lg font-label-sm text-xs font-semibold transition-all cursor-pointer flex flex-col items-center gap-0.5"
+                  >
+                    <span>{{ len }}</span>
+                    <span class="text-[9px] opacity-60 font-normal">char</span>
+                  </button>
+                </div>
+              </div>
+              <!-- Limit Toggle -->
+              <div>
+                <p class="text-xs text-outline font-semibold uppercase tracking-wider mb-sm">Display Limit</p>
+                <div class="flex gap-sm flex-wrap">
+                  <button
+                    v-for="opt in limitOptions"
+                    :key="opt.value"
+                    @click="comboLimit = opt.value"
+                    :class="comboLimit === opt.value
+                      ? 'bg-secondary text-on-secondary shadow-sm'
+                      : 'bg-surface-container border-outline-variant text-on-surface-variant hover:bg-surface-container-high border'"
+                    class="flex-1 py-sm px-sm rounded-lg font-label-sm text-xs font-semibold transition-all cursor-pointer"
+                  >
+                    {{ opt.label }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <button @click="generateCombinations" class="w-full bg-primary text-on-primary font-headline-md text-headline-md py-md rounded-xl hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-md cursor-pointer shadow-sm">
             <span class="material-symbols-outlined">auto_awesome</span>
             Generate Combinations
@@ -212,6 +257,44 @@
               <span class="font-label-sm text-[9px] text-on-surface-variant mt-1 uppercase font-semibold">{{ item.romaji }}</span>
             </button>
           </div>
+
+          <!-- Settings in drawer -->
+          <div class="mt-lg border-t border-outline-variant pt-md flex flex-col gap-md">
+            <div>
+              <p class="text-xs text-outline font-semibold uppercase tracking-wider mb-sm">Combination Length <span class="text-primary normal-case">(multi-select)</span></p>
+              <div class="flex gap-sm">
+                <button
+                  v-for="len in availableLengths"
+                  :key="len"
+                  @click="toggleLength(len)"
+                  :class="selectedLengths.has(len)
+                    ? 'bg-primary text-on-primary shadow-sm ring-2 ring-primary/30'
+                    : 'bg-surface-container border border-outline-variant text-on-surface-variant hover:bg-surface-container-high'"
+                  class="flex-1 py-sm px-sm rounded-lg font-label-sm text-xs font-semibold transition-all cursor-pointer flex flex-col items-center gap-0.5"
+                >
+                  <span>{{ len }}</span>
+                  <span class="text-[9px] opacity-60 font-normal">char</span>
+                </button>
+              </div>
+            </div>
+            <div>
+              <p class="text-xs text-outline font-semibold uppercase tracking-wider mb-sm">Display Limit</p>
+              <div class="flex gap-sm flex-wrap">
+                <button
+                  v-for="opt in limitOptions"
+                  :key="opt.value"
+                  @click="comboLimit = opt.value"
+                  :class="comboLimit === opt.value
+                    ? 'bg-secondary text-on-secondary shadow-sm'
+                    : 'bg-surface-container border-outline-variant text-on-surface-variant hover:bg-surface-container-high border'"
+                  class="flex-1 py-sm px-sm rounded-lg font-label-sm text-xs font-semibold transition-all cursor-pointer"
+                >
+                  {{ opt.label }}
+                </button>
+              </div>
+            </div>
+          </div>
+
           <button @click="generateCombinations" class="mt-lg w-full bg-primary text-on-primary py-sm rounded-lg font-bold hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer">
             Apply Selection
           </button>
@@ -273,6 +356,49 @@ const generatedWords = ref<Word[]>([])
 const userAnswers = ref<Record<string, string>>({})
 const focusedWord = ref<string | null>(null)
 
+// Combination settings
+type LimitValue = 6 | 12 | 24 | 48 | 0
+
+// Multi-select: user can pick multiple lengths (2, 3, 4, 5)
+const selectedLengths = ref<Set<number>>(new Set([2, 3]))
+const comboLimit = ref<LimitValue>(12)
+
+const availableLengths = [2, 3, 4, 5]
+
+const toggleLength = (len: number) => {
+  const s = new Set(selectedLengths.value)
+  if (s.has(len)) {
+    if (s.size > 1) s.delete(len) // at least one must be selected
+  } else {
+    s.add(len)
+  }
+  selectedLengths.value = s
+}
+
+const limitOptions: { label: string; value: LimitValue }[] = [
+  { label: '6', value: 6 },
+  { label: '12', value: 12 },
+  { label: '24', value: 24 },
+  { label: '48', value: 48 },
+  { label: 'All', value: 0 },
+]
+
+// Generic recursive N-length combination generator
+const generateNLengthCombos = (pool: string[], length: number): string[][] => {
+  if (length === 1) return pool.map(c => [c])
+  const result: string[][] = []
+  const sub = generateNLengthCombos(pool, length - 1)
+  for (const combo of sub) {
+    for (const c of pool) {
+      // Avoid same char directly adjacent
+      if (combo[combo.length - 1] !== c) {
+        result.push([...combo, c])
+      }
+    }
+  }
+  return result
+}
+
 // Selectors
 const toggleSelect = (char: string) => {
   const newSet = new Set(selectedChars.value)
@@ -292,60 +418,40 @@ const clearAll = () => {
   selectedChars.value = new Set()
 }
 
-// Combinations logic - Round Robin Generator
+// Combinations logic - Generic N-length Generator
 const generateCombinations = () => {
   if (selectedChars.value.size === 0) {
     alert('Please select at least one character.')
     return
   }
 
-  const selectedList = Array.from(selectedChars.value)
+  // Cap the pool to 6 chars for longer combos to avoid browser freeze
+  const fullList = Array.from(selectedChars.value)
   const tempCombinations: Word[] = []
 
-  // 1. Generate pairs of selected characters
-  for (let i = 0; i < selectedList.length; i++) {
-    for (let j = 0; j < selectedList.length; j++) {
-      const c1 = selectedList[i]
-      const c2 = selectedList[j]
-      const jp = c1 + c2
-      const romaji = (hiraganaMap[c1] || '') + (hiraganaMap[c2] || '')
+  const sortedLengths = Array.from(selectedLengths.value).sort()
+
+  for (const len of sortedLengths) {
+    if (fullList.length < len) continue // skip if not enough chars
+    // For longer combos, limit pool to prevent combinatorial explosion
+    const pool = len >= 4 ? fullList.slice(0, Math.min(fullList.length, 6)) : fullList
+    const combos = generateNLengthCombos(pool, len)
+    for (const combo of combos) {
+      const jp = combo.join('')
+      const romaji = combo.map(c => hiraganaMap[c] || '').join('')
       tempCombinations.push({
         jp,
         romaji,
-        meaning: `Combination: ${c1} + ${c2}`
+        meaning: `${len}-char: ${combo.join(' + ')}`
       })
-    }
-  }
-
-  // 2. Generate 3-character combinations if there are enough selected characters
-  if (selectedList.length >= 3) {
-    const limitIndex = Math.min(selectedList.length, 5) // Limit selection base to prevent index explosion
-    for (let i = 0; i < limitIndex; i++) {
-      for (let j = 0; j < limitIndex; j++) {
-        for (let k = 0; k < limitIndex; k++) {
-          const c1 = selectedList[i]
-          const c2 = selectedList[j]
-          const c3 = selectedList[k]
-          // Avoid repetitive characters directly next to each other
-          if (c1 !== c2 && c2 !== c3) {
-            const jp = c1 + c2 + c3
-            const romaji = (hiraganaMap[c1] || '') + (hiraganaMap[c2] || '') + (hiraganaMap[c3] || '')
-            tempCombinations.push({
-              jp,
-              romaji,
-              meaning: `Combination: ${c1} + ${c2} + ${c3}`
-            })
-          }
-        }
-      }
     }
   }
 
   // Shuffle generated combinations
   const shuffled = tempCombinations.sort(() => 0.5 - Math.random())
 
-  // Limit display to maximum of 12 combinations
-  const limit = Math.min(12, shuffled.length)
+  // Apply user-defined limit (0 = show all)
+  const limit = comboLimit.value === 0 ? shuffled.length : Math.min(comboLimit.value, shuffled.length)
   generatedWords.value = shuffled.slice(0, limit)
 
   // Reset user answers
