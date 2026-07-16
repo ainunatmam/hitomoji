@@ -54,7 +54,7 @@
   --font-body-md: "Plus Jakarta Sans", sans-serif;
   --font-body-lg: "Plus Jakarta Sans", sans-serif;
   --font-label-sm: "Hanken Grotesk", sans-serif;
-  --font-character-study: "Noto Serif JP", serif;
+  --font-character-study: "UD Digi Kyokasho NK-R", "UD Digi Kyokasho NP-R", "UD Digital Kyokasho NK-R", "UD Digital Kyokasho NP-R", "YuKyokasho Yoko", "YuKyokasho", "Klee One", "Kiwi Maru", sans-serif;
 
   --font-size-character-study: 64px;
   --font-size-display-lg-mobile: 32px;
@@ -88,7 +88,11 @@
   }
   
   .japanese-mincho {
-    font-family: 'Noto Serif JP', serif;
+    font-family: "UD Digi Kyokasho NK-R", "UD Digi Kyokasho NP-R", "UD Digital Kyokasho NK-R", "UD Digital Kyokasho NP-R", "YuKyokasho Yoko", "YuKyokasho", "Klee One", "Kiwi Maru", sans-serif !important;
+  }
+
+  .font-character-study {
+    font-family: "UD Digi Kyokasho NK-R", "UD Digi Kyokasho NP-R", "UD Digital Kyokasho NK-R", "UD Digital Kyokasho NP-R", "YuKyokasho Yoko", "YuKyokasho", "Klee One", "Kiwi Maru", sans-serif !important;
   }
 
   .generate-btn:active {
